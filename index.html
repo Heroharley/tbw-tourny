@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troll Bedwars Tournament</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #7289da;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #7289da, #99aab5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(114, 137, 218, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #99aab5;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            display: flex;
+            gap: 2rem;
+            padding: 0 1rem;
+            align-items: flex-start;
+        }
+
+        .weeks-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 250px;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .week-btn {
+            background: linear-gradient(135deg, #23272a 0%, #2c2f33 100%);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 1.5rem 2rem;
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .week-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .week-btn:hover::before {
+            left: 100%;
+        }
+
+        .week-btn:hover {
+            transform: translateX(10px);
+            border-color: #7289da;
+            box-shadow: 0 10px 30px rgba(114, 137, 218, 0.3);
+        }
+
+        .week-btn.active {
+            background: linear-gradient(135deg, #7289da 0%, #5b6eae 100%);
+            border-color: #7289da;
+            transform: translateX(10px);
+            box-shadow: 0 15px 40px rgba(114, 137, 218, 0.4);
+        }
+
+        .week-btn .week-status {
+            display: block;
+            font-size: 0.9rem;
+            color: #99aab5;
+            margin-top: 0.5rem;
+            font-weight: 400;
+        }
+
+        .content {
+            flex: 1;
+            background: rgba(35, 39, 42, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid rgba(114, 137, 218, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: all 0.5s ease;
+        }
+
+        .content.fade-in {
+            animation: slideInFade 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideInFade {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .week-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #7289da;
+            text-align: center;
+            position: relative;
+        }
+
+        .week-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #7289da, #99aab5);
+            border-radius: 2px;
+        }
+
+        .week-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #7289da;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .bracket-container {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .bracket-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bracket-line {
+            position: absolute;
+            background: linear-gradient(90deg, #7289da, #99aab5);
+            border-radius: 2px;
+        }
+
+        .horizontal-line {
+            height: 3px;
+        }
+
+        .vertical-line {
+            width: 3px;
+        }
+
+        .winners-section {
+            background: linear-gradient(135deg, rgba(114, 137, 218, 0.2) 0%, rgba(153, 170, 181, 0.1) 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 2px solid rgba(114, 137, 218, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .winners-title {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #7289da;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .winners-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #7289da, #99aab5);
+            border-radius: 2px;
+        }
+
+        .winners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .winner-card {
+            background: linear-gradient(135deg, rgba(114, 137, 218, 0.3) 0%, rgba(35, 39, 42, 0.8) 100%);
+            border-radius: 12px;
+            padding: 1.2rem;
+            border: 2px solid #7289da;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .winner-card::before {
+            content: '🏆';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 2rem;
+            opacity: 0.3;
+            transform: rotate(15deg);
+        }
+
+        .winner-name {
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .winner-players {
+            color: #99aab5;
+            font-size: 0.9rem;
+        }
+
+        .advance-arrow {
+            display: flex;
+            justify-content: center;
+            margin: 1.5rem 0;
+            font-size: 2rem;
+            color: #7289da;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .game-card {
+            background: linear-gradient(135deg, rgba(44, 47, 51, 0.8) 0%, rgba(35, 39, 42, 0.8) 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(114, 137, 218, 0.2);
+            border-color: #7289da;
+        }
+
+        .game-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-align: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(114, 137, 218, 0.3);
+        }
+
+        .teams-list {
+            list-style: none;
+        }
+
+        .team-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            border-radius: 10px;
+            border-left: 3px solid #7289da;
+            transition: all 0.2s ease;
+        }
+
+        .team-item:hover {
+            background: rgba(114, 137, 218, 0.1);
+            transform: translateX(5px);
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+        }
+
+        .participants {
+            color: #99aab5;
+            font-size: 0.9rem;
+        }
+
+        .tournament-info {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .info-card {
+            background: rgba(35, 39, 42, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(114, 137, 218, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-card h3 {
+            color: #7289da;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .info-card ul {
+            list-style: none;
+        }
+
+        .info-card li {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            border-left: 3px solid #7289da;
+        }
+
+        .note {
+            font-style: italic;
+            color: #99aab5;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .weeks-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                min-width: auto;
+                position: static;
+            }
+            
+            .week-btn {
+                min-width: 200px;
+                flex-shrink: 0;
+            }
+            
+            .week-btn:hover {
+                transform: translateY(-5px);
+            }
+            
+            .week-btn.active {
+                transform: translateY(-5px);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1.5rem;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 Troll Bedwars Tournament 🖥️</h1>
+        <p class="subtitle">Monthly Championship Series</p>
+    </div>
+
+    <div class="container">
+        <nav class="weeks-nav" id="weeksNav">
+            <!-- Week buttons will be injected here -->
+        </nav>
+        
+        <main class="content" id="mainContent">
+            <!-- Week content will be injected here -->
+        </main>
+    </div>
+
+    <div class="tournament-info">
+        <div class="info-card">
+            <h3>🏆 Tournament Rules</h3>
+            <ul>
+                <li>Teams of 3 players required</li>
+                <li>No alt accounts or fresh unranked accounts</li>
+                <li>No glitching, exploiting, or cheating</li>
+                <li>Stay active - no excessive hiding</li>
+                <li>PC and Console matches separated</li>
+            </ul>
+        </div>
+        
+        <div class="info-card">
+            <h3>🎁 Prizes</h3>
+            <p>Winner receives <strong>1000 V-Bucks</strong> gift card</p>
+            <p>Additional prizes based on performance</p>
+            <p class="note">Future tournaments will include money rewards</p>
+        </div>
+    </div>
+
+    <script>
+        // Tournament data structure with winners
+        const tournament = {
+            week_1: {
+                game1: {
+                    participants: {
+                        team1: "Team Alpha - Alice, Bob, Charlie",
+                        team2: "Team Bravo - Dave, Eve, Frank", 
+                        team3: "Team Charlie - Grace, Heidi, Ivan",
+                        team4: "Team Delta - Jack, Kathy, Leo"
+                    },
+                    winner: "Team Alpha - Alice, Bob, Charlie"
+                },
+                game2: {
+                    participants: {
+                        team1: "Team Echo - Mike, Nancy, Oscar",
+                        team2: "Team Foxtrot - Paul, Quinn, Rachel",
+                        team3: "Team Golf - Sam, Tina, Uma",
+                        team4: "Team Hotel - Victor, Wendy, Xavier"
+                    },
+                    winner: "Team Echo - Mike, Nancy, Oscar"
+                },
+                game3: {
+                    participants: {
+                        team1: "Team India - Yara, Zack, Amy",
+                        team2: "Team Juliet - Ben, Cathy, Dan",
+                        team3: "Team Kilo - Emma, Felix, Gina",
+                        team4: "Team Lima - Hugo, Iris, Jake"
+                    },
+                    winner: "Team India - Yara, Zack, Amy"
+                },
+                game4: {
+                    participants: {
+                        team1: "Team Mike - Kelly, Luke, Maya",
+                        team2: "Team November - Nick, Olive, Pete",
+                        team3: "Team Oscar - Queen, Rick, Sofia",
+                        team4: "Team Papa - Tom, Una, Val"
+                    },
+                    winner: "Team Mike - Kelly, Luke, Maya"
+                },
+                game5: {
+                    participants: {
+                        team1: "Team Quebec - Wade, Xara, York",
+                        team2: "Team Romeo - Zara, Adam, Beth",
+                        team3: "Team Sierra - Carl, Diana, Erik",
+                        team4: "Team Tango - Fay, George, Helen"
+                    },
+                    winner: "Team Quebec - Wade, Xara, York"
+                },
+                game6: {
+                    participants: {
+                        team1: "Team Uniform - Ian, Jess, Kyle",
+                        team2: "Team Victor - Liam, Mia, Noah",
+                        team3: "Team Whiskey - Oya, Phil, Ruby",
+                        team4: "Team X-ray - Seth, Tara, Ulrich"
+                    },
+                    winner: "Team Uniform - Ian, Jess, Kyle"
+                }
+            },
+            week_2: {
+                game1: {
+                    participants: {
+                        team1: "Team Alpha - Alice, Bob, Charlie",
+                        team2: "Team Echo - Mike, Nancy, Oscar",
+                        team3: "Team India - Yara, Zack, Amy",
+                        team4: "Team Mike - Kelly, Luke, Maya"
+                    },
+                    winner: "Team Alpha - Alice, Bob, Charlie"
+                },
+                game2: {
+                    participants: {
+                        team1: "Team Quebec - Wade, Xara, York",
+                        team2: "Team Uniform - Ian, Jess, Kyle",
+                        team3: "Team Bravo - Dave, Eve, Frank",
+                        team4: "Team Foxtrot - Paul, Quinn, Rachel"
+                    },
+                    winner: "Team Quebec - Wade, Xara, York"
+                },
+                game3: {
+                    participants: {
+                        team1: "Team Juliet - Ben, Cathy, Dan",
+                        team2: "Team November - Nick, Olive, Pete",
+                        team3: "Team Romeo - Zara, Adam, Beth",
+                        team4: "Team Victor - Liam, Mia, Noah"
+                    },
+                    winner: "Team Juliet - Ben, Cathy, Dan"
+                },
+                game4: {
+                    participants: {
+                        team1: "Team Charlie - Grace, Heidi, Ivan",
+                        team2: "Team Golf - Sam, Tina, Uma",
+                        team3: "Team Kilo - Emma, Felix, Gina",
+                        team4: "Team Oscar - Queen, Rick, Sofia"
+                    },
+                    winner: "Team Charlie - Grace, Heidi, Ivan"
+                }
+            },
+            week_3: {
+                game1: {
+                    participants: {
+                        team1: "Team Alpha - Alice, Bob, Charlie",
+                        team2: "Team Quebec - Wade, Xara, York"
+                    },
+                    winner: "Team Alpha - Alice, Bob, Charlie"
+                },
+                game2: {
+                    participants: {
+                        team1: "Team Juliet - Ben, Cathy, Dan",
+                        team2: "Team Charlie - Grace, Heidi, Ivan"
+                    },
+                    winner: "Team Juliet - Ben, Cathy, Dan"
+                },
+                game3: {
+                    participants: {
+                        team1: "Team Echo - Mike, Nancy, Oscar",
+                        team2: "Team Uniform - Ian, Jess, Kyle"
+                    },
+                    winner: "Team Echo - Mike, Nancy, Oscar"
+                },
+                game4: {
+                    participants: {
+                        team1: "Team November - Nick, Olive, Pete",
+                        team2: "Team Golf - Sam, Tina, Uma"
+                    },
+                    winner: "Team November - Nick, Olive, Pete"
+                }
+            },
+            week_4: {
+                final_game: {
+                    participants: {
+                        team1: "Team Alpha - Alice, Bob, Charlie",
+                        team2: "Team Juliet - Ben, Cathy, Dan",
+                        team3: "Team Echo - Mike, Nancy, Oscar", 
+                        team4: "Team November - Nick, Olive, Pete"
+                    },
+                    winner: "Team Alpha - Alice, Bob, Charlie"
+                }
+            }
+        };
+
+        // Week information
+        const weekInfo = {
+            week_1: {
+                title: "Week 1: Qualifiers",
+                description: "24 Teams compete across 6 games. The 16 quickest winners advance to Week 2.",
+                status: "8 teams eliminated"
+            },
+            week_2: {
+                title: "Week 2: Quarter Finals", 
+                description: "16 Teams compete across 4 games. The 8 quickest winners advance to Week 3.",
+                status: "8 teams eliminated"
+            },
+            week_3: {
+                title: "Week 3: Semi Finals",
+                description: "8 Teams compete across 4 head-to-head games. The 4 winners advance to Finals.",
+                status: "4 teams eliminated"
+            },
+            week_4: {
+                title: "Week 4: Finals",
+                description: "4 Teams compete in the ultimate showdown. Only 1 winner remains!",
+                status: "3 teams eliminated, 1 CHAMPION!"
+            }
+        };
+
+        // DOM elements
+        const weeksNav = document.getElementById('weeksNav');
+        const mainContent = document.getElementById('mainContent');
+
+        let currentWeek = 'week_1';
+
+        // Initialize the tournament display
+        function init() {
+            renderWeekNavigation();
+            showWeek('week_1');
+        }
+
+        // Render week navigation buttons
+        function renderWeekNavigation() {
+            weeksNav.innerHTML = '';
+            
+            Object.keys(weekInfo).forEach(weekKey => {
+                const weekData = weekInfo[weekKey];
+                const button = document.createElement('button');
+                button.className = `week-btn ${weekKey === currentWeek ? 'active' : ''}`;
+                button.onclick = () => showWeek(weekKey);
+                button.innerHTML = `
+                    <div>${weekData.title}</div>
+                    <div class="week-status">${weekData.status}</div>
+                `;
+                weeksNav.appendChild(button);
+            });
+        }
+
+        // Show specific week content
+        function showWeek(weekKey) {
+            currentWeek = weekKey;
+            
+            // Update navigation
+            document.querySelectorAll('.week-btn').forEach(btn => btn.classList.remove('active'));
+            event?.target.closest('.week-btn')?.classList.add('active') || 
+            document.querySelector(`.week-btn:nth-child(${Object.keys(weekInfo).indexOf(weekKey) + 1})`).classList.add('active');
+            
+            // Add fade effect
+            mainContent.classList.remove('fade-in');
+            
+            setTimeout(() => {
+                renderWeekContent(weekKey);
+                mainContent.classList.add('fade-in');
+            }, 100);
+        }
+
+        // Render week content
+        function renderWeekContent(weekKey) {
+            const weekData = weekInfo[weekKey];  
+            const games = tournament[weekKey];
+            
+            let gamesHTML = '';
+            let winnersHTML = '';
+            
+            if (games) {
+                const gameKeys = Object.keys(games);
+                const winners = [];
+                
+                gameKeys.forEach((gameKey, index) => {
+                    const game = games[gameKey];
+                    const gameTitle = weekKey === 'week_4' ? '🏆 FINAL CHAMPIONSHIP' : 
+                                    `🎮 ${gameKey.replace('game', 'Game ').replace('final_game', 'Final Game')}`;
+                    
+                    gamesHTML += `
+                        <div class="game-card" data-game="${gameKey}">
+                            <div class="game-title">${gameTitle}</div>
+                            <ul class="teams-list">
+                                ${Object.values(game.participants).map(team => {
+                                    const [teamName, ...players] = team.split(' - ');
+                                    const isWinner = game.winner === team;
+                                    return `
+                                        <li class="team-item ${isWinner ? 'winner-highlight' : ''}">
+                                            <div class="team-name">${teamName} ${isWinner ? '🏆' : ''}</div>
+                                            <div class="participants">${players.join(' - ')}</div>
+                                        </li>
+                                    `;
+                                }).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    
+                    if (game.winner) {
+                        winners.push(game.winner);
+                    }
+                });
+
+                // Create winners section if there are winners and it's not the final week
+                if (winners.length > 0) {
+                    const nextWeekText = weekKey === 'week_4' ? 'TOURNAMENT CHAMPION! 🎉' : 
+                                       weekKey === 'week_3' ? 'Advancing to Finals' :
+                                       weekKey === 'week_2' ? 'Advancing to Semi Finals' :
+                                       'Advancing to Quarter Finals';
+                    
+                    winnersHTML = `
+                        <div class="advance-arrow">⬇️</div>
+                        <div class="winners-section">
+                            <div class="winners-title">${nextWeekText}</div>
+                            <div class="winners-grid">
+                                ${winners.map(winner => {
+                                    const [teamName, ...players] = winner.split(' - ');
+                                    return `
+                                        <div class="winner-card">
+                                            <div class="winner-name">${teamName}</div>
+                                            <div class="winner-players">${players.join(' - ')}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            mainContent.innerHTML = `
+                <h2 class="week-title">${weekData.title}</h2>
+                <div class="week-info">
+                    <p><strong>Format:</strong> ${weekData.description}</p>
+                    <p><strong>Result:</strong> ${weekData.status}</p>
+                </div>
+                <div class="bracket-container">
+                    <div class="games-grid">
+                        ${gamesHTML}
+                    </div>
+                    ${winnersHTML}
+                </div>
+            `;
+
+            // Add winner highlighting styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .winner-highlight {
+                    background: linear-gradient(135deg, rgba(114, 137, 218, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
+                    border-left: 4px solid #7289da !important;
+                    border-right: 4px solid #7289da !important;
+                    box-shadow: 0 0 15px rgba(114, 137, 218, 0.4);
+                    animation: winnerGlow 2s infinite alternate;
+                }
+                
+                @keyframes winnerGlow {
+                    0% {
+                        box-shadow: 0 0 15px rgba(114, 137, 218, 0.4);
+                    }
+                    100% {
+                        box-shadow: 0 0 25px rgba(114, 137, 218, 0.6);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
